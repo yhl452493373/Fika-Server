@@ -1,7 +1,10 @@
-import fs from "fs";
 import path from "path";
+
 import { LauncherController } from "@spt/controllers/LauncherController";
 import { ProfileController } from "@spt/controllers/ProfileController";
+import { InventoryHelper } from "@spt/helpers/InventoryHelper";
+import { IPmcData } from "@spt/models/eft/common/IPmcData";
+import { IItem } from "@spt/models/eft/common/tables/IItem";
 import { IProfileCreateRequestData } from "@spt/models/eft/profile/IProfileCreateRequestData";
 import { ISptProfile, Info } from "@spt/models/eft/profile/ISptProfile";
 import { ConfigTypes } from "@spt/models/enums/ConfigTypes";
@@ -9,11 +12,11 @@ import { IHttpConfig } from "@spt/models/spt/config/IHttpConfig";
 import type { ILogger } from "@spt/models/spt/utils/ILogger";
 import { ConfigServer } from "@spt/servers/ConfigServer";
 import { SaveServer } from "@spt/servers/SaveServer";
+import { FileSystem } from "@spt/utils/FileSystem";
 import { HashUtil } from "@spt/utils/HashUtil";
-import { RandomUtil } from "@spt/utils/RandomUtil";
 import { TimeUtil } from "@spt/utils/TimeUtil";
+
 import { inject, injectable } from "tsyringe";
-import { IFikaConfigHeadless } from "../../models/fika/config/IFikaConfigHeadless";
 import { FikaConfig } from "../../utils/FikaConfig";
 
 @injectable()
@@ -30,16 +33,17 @@ export class FikaHeadlessProfileService {
         @inject("SaveServer") protected saveServer: SaveServer,
         @inject("WinstonLogger") protected logger: ILogger,
         @inject("TimeUtil") protected timeUtil: TimeUtil,
-        @inject("RandomUtil") protected randomUtil: RandomUtil,
         @inject("HashUtil") protected hashUtil: HashUtil,
         @inject("ProfileController") protected profileController: ProfileController,
         @inject("FikaConfig") protected fikaConfig: FikaConfig,
         @inject("ConfigServer") protected configServer: ConfigServer,
+        @inject("InventoryHelper") protected inventoryHelper: InventoryHelper,
+        @inject("FileSystem") protected fileSystem: FileSystem,
     ) {
         this.httpConfig = this.configServer.getConfig(ConfigTypes.HTTP);
     }
 
-    public init() {
+    public async init(): Promise<void> {
         const headlessConfig = this.fikaConfig.getConfig().headless;
 
         this.headlessProfiles = this.loadHeadlessProfiles();
@@ -49,7 +53,11 @@ export class FikaHeadlessProfileService {
         const profileAmount = headlessConfig.profiles.amount;
 
         if (this.headlessProfiles.length < profileAmount) {
-            const createdProfiles = this.createHeadlessProfiles(profileAmount);
+            const createdProfiles = await this.createHeadlessProfiles(profileAmount);
+
+            for (const profile of createdProfiles) {
+                this.clearHeadlessItems(profile.characters.pmc, profile.info.id);
+            }
 
             this.logger.success(`Created ${createdProfiles.length} headless client profiles!`);
 
@@ -82,7 +90,7 @@ export class FikaHeadlessProfileService {
         for (const profileId in this.saveServer.getProfiles()) {
             const profile = this.saveServer.getProfile(profileId);
 
-            if (profile.info.password == "fika-headless") {
+            if (profile.info.password === "fika-headless") {
                 profiles.push(profile);
             }
         }
@@ -90,29 +98,29 @@ export class FikaHeadlessProfileService {
         return profiles;
     }
 
-    public createHeadlessProfiles(profileAmount: number): ISptProfile[] {
+    public async createHeadlessProfiles(profileAmount: number): Promise<ISptProfile[]> {
         let profileCount = this.headlessProfiles.length;
         let profileAmountToCreate = profileAmount - profileCount;
         let createdProfiles: ISptProfile[] = [];
 
         for (let i = 0; i < profileAmountToCreate; i++) {
-            const profile = this.createHeadlessProfile();
+            const profile = await this.createHeadlessProfile();
             createdProfiles.push(profile);
         }
 
         return createdProfiles;
     }
 
-    public createHeadlessProfile(): ISptProfile {
+    public async createHeadlessProfile(): Promise<ISptProfile> {
         // Generate a unique username
-        const username = `headless_${this.generateUniqueId()}`;
+        const username = `headless_${this.hashUtil.generate()}`;
         // Using a password allows us to know which profiles are headless client profiles.
         const password = "fika-headless";
         // Random edition. Doesn't matter
         const edition = "Standard";
 
         // Create mini profile
-        const profileId = this.createMiniProfile(username, password, edition);
+        const profileId = await this.createMiniProfile(username, password, edition);
 
         // Random character configs. Doesn't matter.
         const newProfileData: IProfileCreateRequestData = {
@@ -122,14 +130,14 @@ export class FikaHeadlessProfileService {
             voiceId: this.VOICE_USEC_4,
         };
 
-        const profile = this.createFullProfile(newProfileData, profileId);
+        const profile = await this.createFullProfile(newProfileData, profileId);
 
         return profile;
     }
 
-    public createMiniProfile(username: string, password: string, edition: string): string {
-        const profileId = this.generateUniqueId();
-        const scavId = this.generateUniqueId();
+    public async createMiniProfile(username: string, password: string, edition: string): Promise<string> {
+        const profileId = this.hashUtil.generate();
+        const scavId = this.hashUtil.generate();
 
         const newProfileDetails: Info = {
             id: profileId,
@@ -143,21 +151,33 @@ export class FikaHeadlessProfileService {
 
         this.saveServer.createProfile(newProfileDetails);
 
-        this.saveServer.loadProfile(profileId);
-        this.saveServer.saveProfile(profileId);
+        await this.saveServer.loadProfile(profileId);
+        await this.saveServer.saveProfile(profileId);
 
         return profileId;
     }
 
-    public createFullProfile(profileData: IProfileCreateRequestData, profileId: string) {
-        this.profileController.createProfile(profileData, profileId);
+    public async createFullProfile(profileData: IProfileCreateRequestData, profileId: string): Promise<ISptProfile> {
+        await this.profileController.createProfile(profileData, profileId);
 
         const profile = this.saveServer.getProfile(profileId);
+
+        const originalItemsArray = profile.characters.pmc.Inventory.items.slice();
+
+        for (const item of originalItemsArray) {
+            if (!item.slotId || item._id === profile.characters.pmc.Inventory.equipment || ["SecuredContainer", "Pockets", "Scabbard"].includes(item.slotId)) {
+                continue;
+            }
+
+            this.inventoryHelper.removeItem(profile.characters.pmc, item._id, profileId);
+        }
+
+        profile.characters.pmc.Inventory.fastPanel = {};
 
         return profile;
     }
 
-    public generateLaunchScript(profile: ISptProfile, backendUrl: string, targetFolderPath: string) {
+    public async generateLaunchScript(profile: ISptProfile, backendUrl: string, targetFolderPath: string): Promise<void> {
         const scriptName = `Start_${profile.info.username}.bat`;
         const scriptPath = path.join(targetFolderPath, scriptName);
         const scriptContent = `@echo off
@@ -169,11 +189,11 @@ if NOT EXIST ".\\BepInEx\\plugins\\Fika.Headless.dll" (
 )`;
 
         try {
-            if (!fs.existsSync(targetFolderPath)) {
-                fs.mkdirSync(targetFolderPath);
+            if (!(await this.fileSystem.exists(targetFolderPath))) {
+                await this.fileSystem.ensureDir(targetFolderPath);
             }
 
-            fs.writeFileSync(scriptPath, scriptContent);
+            await this.fileSystem.write(scriptPath, scriptContent);
 
             this.logger.success(`Generated launch script: /fika-server/assets/scripts/${scriptName}`);
         } catch (error) {
@@ -181,17 +201,21 @@ if NOT EXIST ".\\BepInEx\\plugins\\Fika.Headless.dll" (
         }
     }
 
-    // generateProfileId
-    protected generateUniqueId(): string {
-        const timestamp = this.timeUtil.getTimestamp();
+    private clearHeadlessItems(pmcProfile: IPmcData, sessionId: string) {
+        const itemsToDelete = this.getHeadlessItems(pmcProfile).map((item) => item._id);
 
-        return this.formatID(timestamp, timestamp * this.randomUtil.getInt(1, 1000000));
+        for (const itemIdToDelete of itemsToDelete) {
+            this.inventoryHelper.removeItem(pmcProfile, itemIdToDelete, sessionId);
+        }
+
+        pmcProfile.Inventory.fastPanel = {};
     }
 
-    protected formatID(timeStamp: number, counter: number): string {
-        const timeStampStr = timeStamp.toString(16).padStart(8, "0");
-        const counterStr = counter.toString(16).padStart(16, "0");
+    private getHeadlessItems(pmcProfile: IPmcData): IItem[] {
+        const inventoryItems = pmcProfile.Inventory.items ?? [];
+        const equipmentRootId = pmcProfile?.Inventory?.equipment;
+        const stashRootId = pmcProfile?.Inventory.stash;
 
-        return timeStampStr.toLowerCase() + counterStr.toLowerCase();
+        return inventoryItems.filter((item) => item.parentId == equipmentRootId || item.parentId == stashRootId);
     }
 }
