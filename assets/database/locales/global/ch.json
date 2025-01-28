@@ -254,5 +254,6 @@
     "F_UI_FikaVersionError": "您使用的Fika版本与战局主机运行的版本不同。\n您的Fika版本: {0}\n主机Fika版本: {1}",
     "F_UI_PlayerConnected": "{0} 已链接",
     "F_UI_PlayerDisconnected": "{0} 已断开链接",
-    "F_UI_DisabledByServerHost": "被服务器主机禁用"
+    "F_UI_DisabledByServerHost": "被服务器主机禁用",
+    "F_UI_CustomWeather": "使用自定义天气"
 }
