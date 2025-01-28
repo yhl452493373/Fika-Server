@@ -255,5 +255,6 @@
     "F_UI_PlayerConnected": "{0} has connected",
     "F_UI_PlayerDisconnected": "{0} has disconnected",
     "F_UI_DisabledByServerHost": "Disabled by server host",
-    "F_UI_CustomWeather": "Use custom weather"
+    "F_UI_CustomWeather": "Use custom weather",
+    "F_UI_AlwaysPVE": "Fika will always be"
 }
