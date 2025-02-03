@@ -1,23 +1,23 @@
-import { DependencyContainer, inject, injectable } from "tsyringe";
+import {DependencyContainer, inject, injectable} from "tsyringe";
 
-import { ApplicationContext } from "@spt/context/ApplicationContext";
-import { ContextVariableType } from "@spt/context/ContextVariableType";
-import { ProfileHelper } from "@spt/helpers/ProfileHelper";
-import { ILocationBase } from "@spt/models/eft/common/ILocationBase";
-import { IEndLocalRaidRequestData, ILocationTransit } from "@spt/models/eft/match/IEndLocalRaidRequestData";
-import { IStartLocalRaidRequestData } from "@spt/models/eft/match/IStartLocalRaidRequestData";
-import { IStartLocalRaidResponseData } from "@spt/models/eft/match/IStartLocalRaidResponseData";
-import type { ILogger } from "@spt/models/spt/utils/ILogger";
-import { BotGenerationCacheService } from "@spt/services/BotGenerationCacheService";
-import { BotLootCacheService } from "@spt/services/BotLootCacheService";
-import { DatabaseService } from "@spt/services/DatabaseService";
-import { LocationLifecycleService } from "@spt/services/LocationLifecycleService";
-import { TimeUtil } from "@spt/utils/TimeUtil";
+import {ApplicationContext} from "@spt/context/ApplicationContext";
+import {ContextVariableType} from "@spt/context/ContextVariableType";
+import {ProfileHelper} from "@spt/helpers/ProfileHelper";
+import {ILocationBase} from "@spt/models/eft/common/ILocationBase";
+import {IEndLocalRaidRequestData, ILocationTransit} from "@spt/models/eft/match/IEndLocalRaidRequestData";
+import {IStartLocalRaidRequestData} from "@spt/models/eft/match/IStartLocalRaidRequestData";
+import {IStartLocalRaidResponseData} from "@spt/models/eft/match/IStartLocalRaidResponseData";
+import type {ILogger} from "@spt/models/spt/utils/ILogger";
+import {BotGenerationCacheService} from "@spt/services/BotGenerationCacheService";
+import {BotLootCacheService} from "@spt/services/BotLootCacheService";
+import {DatabaseService} from "@spt/services/DatabaseService";
+import {LocationLifecycleService} from "@spt/services/LocationLifecycleService";
+import {TimeUtil} from "@spt/utils/TimeUtil";
 
-import { TransitionType } from "@spt/models/enums/TransitionType";
-import { Override } from "../../di/Override";
+import {TransitionType} from "@spt/models/enums/TransitionType";
+import {Override} from "../../di/Override";
 import { FikaInsuranceService } from "../../services/FikaInsuranceService";
-import { FikaMatchService } from "../../services/FikaMatchService";
+import {FikaMatchService} from "../../services/FikaMatchService";
 
 @injectable()
 export class LocationLifecycleServiceOverride extends Override {
@@ -40,7 +40,7 @@ export class LocationLifecycleServiceOverride extends Override {
         container.afterResolution(
             "LocationLifecycleService",
             (_t, result: LocationLifecycleService) => {
-                const originalEndLocalRaid = result.endLocalRaid;
+                const originalEndLocalRaid = LocationLifecycleService.prototype.endLocalRaid;
 
                 result.startLocalRaid = (sessionId: string, request: IStartLocalRaidRequestData): IStartLocalRaidResponseData => {
                     let locationLoot: ILocationBase;
@@ -68,7 +68,7 @@ export class LocationLifecycleServiceOverride extends Override {
                     const result: IStartLocalRaidResponseData = {
                         serverId: `${request.location}.${request.playerSide}.${this.timeUtil.getTimestamp()}`,
                         serverSettings: this.databaseService.getLocationServices(),
-                        profile: { insuredItems: playerProfile.InsuredItems },
+                        profile: {insuredItems: playerProfile.InsuredItems},
                         locationLoot: locationLoot,
                         transition: {
                             transitionType: TransitionType.Common,
@@ -128,14 +128,14 @@ export class LocationLifecycleServiceOverride extends Override {
                     }
 
                     this.fikaInsuranceService.onEndLocalRaidRequest(sessionId, this.fikaInsuranceService.getMatchId(sessionId), request);
-
                     // Execute the original method if not a spectator
                     if (!isSpectator) {
-                        originalEndLocalRaid(sessionId, request);
+                        originalEndLocalRaid.call(result, sessionId, request);
                     }
+
                 };
             },
-            { frequency: "Always" },
+            {frequency: "Always"},
         );
     }
 }
