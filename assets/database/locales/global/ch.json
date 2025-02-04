@@ -239,6 +239,8 @@
     "F_BepInEx_SendRate_D": "每秒发送移动数据包的频率(值越低=使用的带宽越少，但插值期间的延迟略高)。\n此设置仅影响主机，并会同步到所有客户端。\n单位为每秒发送次数：\n\n非常低 = 10\n低 = 15\n中 = 20\n高 = 30\n\n建议保持在不高于\"中\"的设置，因为更高的设置带来的性能提升微乎其微。",
     "F_BepInEx_SmoothingRate_T": "平滑速率",
     "F_BepInEx_SmoothingRate_D": "本地模拟延迟为(发送速率 * 平滑速率)。这样可以确保缓冲区中始终有足够的快照，以在插值期间减轻延迟和抖动的影响。\n\n低 = 1.5 \n中 = 2 \n高 = 2.5 \n\n如果运动不流畅，将此设置为“高”。无法在突袭过程中更改。",
+    "F_BepInEx_NetMultiThread_T": "使用多线程",
+    "F_BepInEx_NetMultiThread_D": "网络组件是否使用多线程。 这有可能缓解游戏卡顿时出现的问题，让网络组件在帧率低的时候仍能处理和排队等候的数据包。\n这是一个实验性功能，建议仅在高端配置电脑上启用。",
     "F_BepInEx_DisableBotMetabolism_T": "禁用AI新陈代谢",
     "F_BepInEx_DisableBotMetabolism_D": "禁用AI新陈代谢，防止其在长时间行动中因饥饿/脱水而死亡",
     "F_MMUI_OnlinePlayers": "在线玩家: {0}",
