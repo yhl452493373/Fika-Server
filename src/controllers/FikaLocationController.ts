@@ -2,15 +2,15 @@ import { inject, injectable } from "tsyringe";
 
 import { IGetRaidConfigurationRequestData } from "@spt/models/eft/match/IGetRaidConfigurationRequestData";
 
+import { FikaHeadlessHelper } from "../helpers/FikaHeadlessHelper";
 import { IFikaRaidsResponse } from "../models/fika/routes/location/IFikaRaidsResponse";
 import { FikaMatchService } from "../services/FikaMatchService";
-import { FikaHeadlessService } from "../services/headless/FikaHeadlessService";
 
 @injectable()
 export class FikaLocationController {
     constructor(
         @inject("FikaMatchService") protected fikaMatchService: FikaMatchService,
-        @inject("FikaHeadlessService") protected fikaHeadlessService: FikaHeadlessService,
+        @inject("FikaHeadlessHelper") protected fikaHeadlessHelper: FikaHeadlessHelper,
     ) {
         // empty
     }
@@ -29,9 +29,15 @@ export class FikaLocationController {
                 players[profileId] = player.isDead;
             }
 
+            let hostUsername = match.hostUsername;
+
+            if (match.isHeadless) {
+                hostUsername = this.fikaHeadlessHelper.getHeadlessNickname(matchId);
+            }
+
             matches.push({
                 serverId: matchId,
-                hostUsername: match.hostUsername,
+                hostUsername: hostUsername,
                 playerCount: match.players.size,
                 status: match.status,
                 location: match.raidConfig.location,
@@ -39,7 +45,7 @@ export class FikaLocationController {
                 time: match.time,
                 players: players,
                 isHeadless: match.isHeadless,
-                headlessRequesterNickname: this.fikaHeadlessService.getRequesterUsername(matchId) || "", //Set this to an empty string if there is no requester.
+                headlessRequesterNickname: this.fikaHeadlessHelper.getRequesterUsername(matchId) || "", //Set this to an empty string if there is no requester.
             });
         }
 
