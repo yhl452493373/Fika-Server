@@ -44,6 +44,7 @@
     "F_MMUI_LoadingScreenHeader": "加载中",
     "F_MMUI_LoadingScreenDescription": "请稍候，正在初始化... 这可能需要一些时间。",
     "F_MMUI_JoinAsSpectator": "观战模式",
+    "F_MMUI_JoinAsSpectator_D": "以观战者身份加入战局。",
     "F_UI_StartRaid": "启动战局",
     "F_UI_StartRaidDescription": "启动战局\n后续玩家将无法进入",
     "F_UI_CannotJoinRaidOtherMap": "不可以加入另一个地图的战局\n战局地图: {0}",
