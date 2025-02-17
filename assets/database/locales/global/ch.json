@@ -261,5 +261,7 @@
     "F_UI_PlayerDisconnected": "{0} 已断开链接",
     "F_UI_DisabledByServerHost": "被服务器主机禁用",
     "F_UI_CustomWeather": "自定义天气",
-    "F_UI_AlwaysPVE": "Fika始终为"
+    "F_UI_AlwaysPVE": "Fika始终为",
+    "F_UI_Born_Together": "一起",
+    "F_UI_Born_Random": "随机"
 }
