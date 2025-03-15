@@ -243,7 +243,7 @@
     "F_BepInEx_SmoothingRate_T": "平滑速率",
     "F_BepInEx_SmoothingRate_D": "本地模拟延迟为(发送速率 * 平滑速率)。这样可以确保缓冲区中始终有足够的快照，以在插值期间减轻延迟和抖动的影响。\n\n低 = 1.5 \n中 = 2 \n高 = 2.5 \n\n如果运动不流畅，将此设置为“高”。无法在突袭过程中更改。",
     "F_BepInEx_NetMultiThread_T": "使用多线程",
-    "F_BepInEx_NetMultiThread_D": "网络组件是否使用多线程。 这有可能缓解游戏卡顿时出现的问题，让网络组件在帧率低的时候仍能处理和排队等候的数据包。\n这是一个实验性功能，建议仅在高端配置电脑上启用。",
+    "F_BepInEx_NetMultiThread_D": "网络组件是否使用多线程。 这有可能缓解游戏卡顿时出现的问题，让网络组件在帧率低的时候仍能处理和排队等候的数据包。\n这是一个实验性功能，建议仅在高端配置电脑上启用。此功能只会在无头模式客户端中生效。",
     "F_BepInEx_VOIP_T": "允许 VOIP 语音通话",
     "F_BepInEx_VOIP_D": "当你作为主机时，是否启用 VOIP 语音通话。",
     "F_BepInEx_DisableBotMetabolism_T": "禁用AI新陈代谢",
